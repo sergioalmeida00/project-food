@@ -27,8 +27,8 @@ export class AuthUserUseCase{
 
         const token = sign(
             {email: emailUserExists.email, name:emailUserExists.name, id: emailUserExists.id},
-            'teste',
-            {expiresIn:'1d'}
+            `${process.env.JWT_PASS}`,
+            { expiresIn: process.env.JWT_EXPIRE, subject: emailUserExists.id },
         )
         delete emailUserExists.password
 
