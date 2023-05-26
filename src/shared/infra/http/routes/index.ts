@@ -7,8 +7,8 @@ import { routerRecipe } from './recipe.routes'
 const router = Router()
 
 router.use('/user', routerUser)
+router.use('/recipe',routerRecipe)
 router.use('/category', routerCategory)
 router.use('/auth', routerAuth)
-router.use('/recipe',routerRecipe)
 
 export { router }
