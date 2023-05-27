@@ -34,4 +34,10 @@ export class KnexRecipeRepository implements IRecipeRepository{
             .andWhere({user_id})
             .del()
     }
+
+    async findAll(): Promise<RecipeDTO[]> {
+       const resultRecipe = knex.select('*').from('recipe')
+
+       return resultRecipe
+    }
 }
