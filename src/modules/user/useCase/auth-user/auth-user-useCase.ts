@@ -4,6 +4,7 @@ import { UserDTO } from "../../DTO/user-dto";
 import { AppError } from "../../../../shared/Errors/AppError";
 import { compare } from "bcryptjs";
 import { sign } from "jsonwebtoken";
+import { Validation } from "../../../../shared/provider/Validation";
 
 @injectable()
 export class AuthUserUseCase{
@@ -13,6 +14,14 @@ export class AuthUserUseCase{
     ){}
 
     async execute ({email,password}:Pick<UserDTO, 'email'|'password'>){
+
+        const requiredFields ={
+            email:'E-mail is required!',
+            password:'Password is required!'
+        }
+
+        Validation.validateRequiredFields({email,password},requiredFields)
+
         const emailUserExists = await this.userRepository.findByEmail(email)
 
         if(!emailUserExists){

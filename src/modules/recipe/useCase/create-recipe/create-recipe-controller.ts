@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { container } from "tsyringe";
 import { CreateRecipeUseCase } from "./create-recipe-useCase";
 import {DiskStorage} from '../../../../shared/provider/DiskStorage'
+import { AppError } from "../../../../shared/Errors/AppError";
 export class CreateRecipeController{
     async handle (request:Request, response:Response):Promise<Response>{
         const createRecipeUseCase = container.resolve(CreateRecipeUseCase)
@@ -23,9 +24,12 @@ export class CreateRecipeController{
             })
             
             return response.status(201).json({resultRecipe})
-        } catch (error) {
-            console.log(error)
-            return response.status(404)
+        } catch (error ) {
+            if (error instanceof AppError) {
+                return response.status(error.statusCode).json({ error: error.message });
+              } else {
+                return response.status(500).json({ error: "Internal Server Error" });
+              }
         }
 
     }
