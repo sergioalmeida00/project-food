@@ -1,3 +1,5 @@
+import { Response } from "express";
+
 export class AppError{
     public readonly message:string;
     public readonly statusCode:number;
@@ -6,4 +8,5 @@ export class AppError{
         this.message = message
         this.statusCode = statusCode
     }
+
 }
