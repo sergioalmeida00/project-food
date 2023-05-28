@@ -4,6 +4,7 @@ import { IRecipeRepository } from "../../IRecipeRepository";
 
 export class KnexRecipeRepository implements IRecipeRepository{
 
+
     async create({ title, description, avatar, time, difficulty, category_id, user_id }: RecipeDTO): Promise<RecipeDTO> {
         
         const resultRecipe = await knex('recipe').insert({
@@ -39,5 +40,19 @@ export class KnexRecipeRepository implements IRecipeRepository{
        const resultRecipe = knex.select('*').from('recipe')
 
        return resultRecipe
+    }
+
+    async update({ id, title, description,difficulty, avatar, time, category_id, user_id}: RecipeDTO): Promise<void> {
+      await knex('recipe')
+        .where({id})
+        .andWhere({user_id})
+        .update({
+            title,
+            description,
+            avatar,
+            difficulty,
+            time,
+            category_id
+        })
     }
 }

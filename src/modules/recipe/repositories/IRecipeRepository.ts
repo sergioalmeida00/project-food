@@ -5,6 +5,16 @@ interface IRecipeRepository{
     findById({id,user_id}:Pick<RecipeDTO, 'id' | 'user_id'>):Promise<RecipeDTO>
     deleteById({id,user_id}:Pick<RecipeDTO, 'id' | 'user_id'>):Promise<void>
     findAll():Promise<RecipeDTO[]>
+    update({
+        id,
+        title,
+        description,
+        difficulty,
+        avatar,
+        time,
+        category_id,
+        user_id
+    }:RecipeDTO):Promise<void>
 }
 
 export {IRecipeRepository}
