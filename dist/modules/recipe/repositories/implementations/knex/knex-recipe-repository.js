@@ -59,7 +59,8 @@ var config2 = {
     port: Number(env.DATABASE_PORT),
     user: env.DATABASE_USER,
     password: env.DATABASE_PASS,
-    database: env.DATABASE_DB
+    database: env.DATABASE_DB,
+    ssl: { rejectUnauthorized: false }
   },
   migrations: {
     tableName: "migrations"
