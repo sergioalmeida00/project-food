@@ -10,7 +10,7 @@ if (process.env.NODE_ENV === 'test') {
 
 const envSchema = z.object({
   DATABASE_HOST: z.string(),
-  DATABASE_PORT: z.coerce.number(),
+  DATABASE_PORT: z.coerce.number().optional(),
   DATABASE_USER: z.string(),
   DATABASE_PASS: z.string(),
   DATABASE_DB: z.string(),
