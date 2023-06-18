@@ -5,9 +5,11 @@ import express, { NextFunction, Request, Response } from 'express'
 import 'dotenv/config'
 import { router } from './http/routes'
 import { AppError } from '../Errors/AppError';
+import cors from 'cors'
 
 const app = express()
 
+app.use(cors())
 app.use(express.json())
 app.use(router)
 
