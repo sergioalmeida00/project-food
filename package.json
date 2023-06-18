@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "tsx watch src/shared/infra/server.ts",
     "knex": "node --no-warnings --loader tsx ./node_modules/.bin/knex",
-    "build":"tsup src"
+    "build":"tsup src",
+    "vercel-build":"npx run knex -- migrate:latest"
   },
   "author": "",
   "license": "ISC",
