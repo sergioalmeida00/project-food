@@ -62,7 +62,7 @@ if (process.env.NODE_ENV === "test") {
 }
 var envSchema = import_zod.z.object({
   DATABASE_HOST: import_zod.z.string(),
-  DATABASE_PORT: import_zod.z.coerce.number(),
+  DATABASE_PORT: import_zod.z.coerce.number().optional(),
   DATABASE_USER: import_zod.z.string(),
   DATABASE_PASS: import_zod.z.string(),
   DATABASE_DB: import_zod.z.string(),
