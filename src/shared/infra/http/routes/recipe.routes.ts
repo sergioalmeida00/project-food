@@ -16,10 +16,13 @@ const updateRecipeController = new UpdateRecipeController()
 const deleteRecipeController = new DeleteRecipeController()
 const upload = multer(MULTER)
 
-routerRecipe.post('/', authenticate, upload.single('file') ,createRecipeController.handle)
+// routerRecipe.post('/', authenticate, upload.single('file') ,createRecipeController.handle)
+// routerRecipe.put('/:id',authenticate ,upload.single('file'), updateRecipeController.handle)
+
+routerRecipe.post('/', authenticate ,createRecipeController.handle)
 routerRecipe.get('/', listRecipeController.handle)
 routerRecipe.get('/edit/:id',authenticate,listByIdRecipeController.handle)
-routerRecipe.put('/:id',authenticate ,upload.single('file'), updateRecipeController.handle)
+routerRecipe.put('/:id',authenticate , updateRecipeController.handle)
 routerRecipe.delete('/:id', authenticate, deleteRecipeController.handle)
 
 

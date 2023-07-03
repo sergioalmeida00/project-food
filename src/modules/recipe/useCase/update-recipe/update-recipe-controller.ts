@@ -8,7 +8,7 @@ export class UpdateRecipeController{
         const updateRecipeUseCase = container.resolve(UpdateRecipeUseCase)
         const { id } = request.params
         const { id: userId } = request.user
-        const filePath = request.file?.filename
+        // const filePath = request.file?.filename
 
         const { 
             title,
@@ -16,6 +16,7 @@ export class UpdateRecipeController{
             time,
             category_id,
             difficulty,
+            avatar
         } = request.body
 
         try {
@@ -24,7 +25,7 @@ export class UpdateRecipeController{
                 id,
                 title,
                 description,
-                avatar:filePath,
+                avatar,
                 time,
                 category_id,
                 difficulty,

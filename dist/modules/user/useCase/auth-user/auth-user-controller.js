@@ -108,6 +108,7 @@ var AuthUserController = class {
       if (error instanceof AppError) {
         return response.status(error.statusCode).json({ error: error.message });
       } else {
+        console.log(error);
         return response.status(500).json({ error: "Internal Server Error" });
       }
     }

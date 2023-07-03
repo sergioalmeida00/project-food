@@ -438,6 +438,7 @@ var AuthUserController = class {
       if (error instanceof AppError) {
         return response.status(error.statusCode).json({ error: error.message });
       } else {
+        console.log(error);
         return response.status(500).json({ error: "Internal Server Error" });
       }
     }
@@ -492,60 +493,17 @@ CreateRecipeUseCase = __decorateClass([
   __decorateParam(0, (0, import_tsyringe10.inject)("KnexRecipeRepository"))
 ], CreateRecipeUseCase);
 
-// src/shared/provider/DiskStorage.ts
-var import_fs = __toESM(require("fs"));
-var import_path2 = require("path");
-
-// src/config/upload.ts
-var import_path = require("path");
-var import_multer = __toESM(require("multer"));
-var import_node_crypto = require("crypto");
-var TMP_FOLDER = (0, import_path.resolve)(__dirname, "..", "..", "tmp");
-var UPLOADS_FOLDER = (0, import_path.resolve)(TMP_FOLDER, "uploads");
-var MULTER = {
-  storage: import_multer.default.diskStorage({
-    destination: TMP_FOLDER,
-    filename(request, file, callback) {
-      const fileHash = (0, import_node_crypto.randomUUID)();
-      const fileName = `${fileHash}-${file.originalname}`;
-      return callback(null, fileName);
-    }
-  })
-};
-
-// src/shared/provider/DiskStorage.ts
-var DiskStorage = class {
-  async saveFile(file) {
-    await import_fs.default.promises.rename(
-      (0, import_path2.resolve)(TMP_FOLDER, file),
-      (0, import_path2.resolve)(UPLOADS_FOLDER, file)
-    );
-    return file;
-  }
-  async deleteFile(file) {
-    const filePath = (0, import_path2.resolve)(UPLOADS_FOLDER, file);
-    try {
-      await import_fs.default.promises.stat(filePath);
-    } catch {
-      return;
-    }
-    await import_fs.default.promises.unlink(filePath);
-  }
-};
-
 // src/modules/recipe/useCase/create-recipe/create-recipe-controller.ts
 var CreateRecipeController = class {
   async handle(request, response) {
     const createRecipeUseCase = import_tsyringe11.container.resolve(CreateRecipeUseCase);
     const { id: userId } = request.user;
-    const filePath = request.file?.filename;
-    const { title, description, time, difficulty, category_id } = request.body;
+    const { title, description, time, difficulty, category_id, avatar } = request.body;
     try {
-      await new DiskStorage().saveFile(filePath);
       const resultRecipe = await createRecipeUseCase.execute({
         title,
         description,
-        avatar: filePath,
+        avatar,
         time,
         difficulty,
         category_id,
@@ -564,6 +522,23 @@ var CreateRecipeController = class {
 
 // src/shared/infra/http/routes/recipe.routes.ts
 var import_multer2 = __toESM(require("multer"));
+
+// src/config/upload.ts
+var import_path = require("path");
+var import_multer = __toESM(require("multer"));
+var import_node_crypto = require("crypto");
+var TMP_FOLDER = (0, import_path.resolve)(__dirname, "..", "..", "tmp");
+var UPLOADS_FOLDER = (0, import_path.resolve)(TMP_FOLDER, "uploads");
+var MULTER = {
+  storage: import_multer.default.diskStorage({
+    destination: TMP_FOLDER,
+    filename(request, file, callback) {
+      const fileHash = (0, import_node_crypto.randomUUID)();
+      const fileName = `${fileHash}-${file.originalname}`;
+      return callback(null, fileName);
+    }
+  })
+};
 
 // src/modules/recipe/useCase/delete-recipe/delete-recipe-controller.ts
 var import_tsyringe13 = require("tsyringe");
@@ -671,13 +646,8 @@ var UpdateRecipeUseCase = class {
     user_id
   }) {
     const recipeExists = await this.recipeRepository.findById({ id, user_id });
-    const diskStorage = new DiskStorage();
     if (!recipeExists) {
       throw new AppError("Recite does not exist!");
-    }
-    if (avatar) {
-      await diskStorage.deleteFile(recipeExists.avatar);
-      await diskStorage.saveFile(avatar);
     }
     const recipeNew = {
       id,
@@ -703,20 +673,20 @@ var UpdateRecipeController = class {
     const updateRecipeUseCase = import_tsyringe17.container.resolve(UpdateRecipeUseCase);
     const { id } = request.params;
     const { id: userId } = request.user;
-    const filePath = request.file?.filename;
     const {
       title,
       description,
       time,
       category_id,
-      difficulty
+      difficulty,
+      avatar
     } = request.body;
     try {
       await updateRecipeUseCase.execute({
         id,
         title,
         description,
-        avatar: filePath,
+        avatar,
         time,
         category_id,
         difficulty,
@@ -784,10 +754,10 @@ var listByIdRecipeController = new ListByIdController();
 var updateRecipeController = new UpdateRecipeController();
 var deleteRecipeController = new DeleteRecipeController();
 var upload = (0, import_multer2.default)(MULTER);
-routerRecipe.post("/", authenticate, upload.single("file"), createRecipeController.handle);
+routerRecipe.post("/", authenticate, createRecipeController.handle);
 routerRecipe.get("/", listRecipeController.handle);
 routerRecipe.get("/edit/:id", authenticate, listByIdRecipeController.handle);
-routerRecipe.put("/:id", authenticate, upload.single("file"), updateRecipeController.handle);
+routerRecipe.put("/:id", authenticate, updateRecipeController.handle);
 routerRecipe.delete("/:id", authenticate, deleteRecipeController.handle);
 
 // src/shared/infra/http/routes/index.ts

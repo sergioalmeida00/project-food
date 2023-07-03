@@ -8,15 +8,15 @@ export class CreateRecipeController{
         const createRecipeUseCase = container.resolve(CreateRecipeUseCase)
 
         const { id: userId } = request.user
-        const filePath = request.file?.filename
-        const {title,description,time,difficulty,category_id} = request.body
+        // const filePath = request.file?.filename
+        const {title,description,time,difficulty,category_id, avatar} = request.body
         try {
-            await new DiskStorage().saveFile(filePath!)
+            // await new DiskStorage().saveFile(filePath!)
             
             const resultRecipe = await createRecipeUseCase.execute({
                 title,
                 description,
-                avatar:filePath,
+                avatar,
                 time,
                 difficulty,
                 category_id,

@@ -22,16 +22,16 @@ export class UpdateRecipeUseCase{
         user_id
     }:RecipeDTO):Promise<void>{
         const recipeExists = await this.recipeRepository.findById({id, user_id})
-        const diskStorage = new DiskStorage()
+        // const diskStorage = new DiskStorage()
 
         if(!recipeExists){
             throw new AppError("Recite does not exist!");            
         }
 
-        if(avatar){
-            await diskStorage.deleteFile(recipeExists.avatar!)
-            await diskStorage.saveFile(avatar)
-        }
+        // if(avatar){
+        //     await diskStorage.deleteFile(recipeExists.avatar!)
+        //     await diskStorage.saveFile(avatar)
+        // }
 
         const recipeNew: RecipeDTO = {
             id,
