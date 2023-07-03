@@ -510,26 +510,6 @@ var CreateRecipeController = class {
   }
 };
 
-// src/shared/infra/http/routes/recipe.routes.ts
-var import_multer2 = __toESM(require("multer"));
-
-// src/config/upload.ts
-var import_path = require("path");
-var import_multer = __toESM(require("multer"));
-var import_node_crypto = require("crypto");
-var TMP_FOLDER = (0, import_path.resolve)(__dirname, "..", "..", "tmp");
-var UPLOADS_FOLDER = (0, import_path.resolve)(TMP_FOLDER, "uploads");
-var MULTER = {
-  storage: import_multer.default.diskStorage({
-    destination: TMP_FOLDER,
-    filename(request, file, callback) {
-      const fileHash = (0, import_node_crypto.randomUUID)();
-      const fileName = `${fileHash}-${file.originalname}`;
-      return callback(null, fileName);
-    }
-  })
-};
-
 // src/modules/recipe/useCase/delete-recipe/delete-recipe-controller.ts
 var import_tsyringe13 = require("tsyringe");
 
@@ -743,7 +723,6 @@ var listRecipeController = new ListRecipeController();
 var listByIdRecipeController = new ListByIdController();
 var updateRecipeController = new UpdateRecipeController();
 var deleteRecipeController = new DeleteRecipeController();
-var upload = (0, import_multer2.default)(MULTER);
 routerRecipe.post("/", authenticate, createRecipeController.handle);
 routerRecipe.get("/", listRecipeController.handle);
 routerRecipe.get("/edit/:id", authenticate, listByIdRecipeController.handle);
