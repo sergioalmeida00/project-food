@@ -1,40 +1,60 @@
-import { inject, injectable } from 'tsyringe'
-import { IUserRepository } from '../../repositories/IUserRepository'
-import { UserDTO } from '../../DTO/user-dto'
-import { hash } from 'bcryptjs'
-import { AppError } from '../../../../shared/Errors/AppError'
-import { Validation } from '../../../../shared/provider/Validation'
+import { inject, injectable } from "tsyringe";
+import { IUserRepository } from "../../repositories/IUserRepository";
+import { UserDTO } from "../../DTO/user-dto";
+import { hash } from "bcryptjs";
+import { AppError } from "../../../../shared/Errors/AppError";
+import { Validation } from "../../../../shared/provider/Validation";
+import { sign } from "jsonwebtoken";
 
 @injectable()
 export class CreateUserUseCase {
   constructor(
-    @inject('KnexUserRepository')
-    private useRepository: IUserRepository,
+    @inject("KnexUserRepository")
+    private useRepository: IUserRepository
   ) {}
 
-  async execute({ name, email, password }: UserDTO): Promise<UserDTO> {
-
+  async execute({ name, email, password }: UserDTO): Promise<any> {
     const requiredFields = {
-      name: 'Name is required!',
-      email:'Email is required!',
-      password: 'Password is required!'
-    }
+      name: "Name is required!",
+      email: "Email is required!",
+      password: "Password is required!",
+    };
 
-    Validation.validateRequiredFields({ name, email, password }, requiredFields)
+    Validation.validateRequiredFields(
+      { name, email, password },
+      requiredFields
+    );
 
-    const passwordHash = await hash(password, 8)
-    const emailExists = await this.useRepository.findByEmail(email)
+    const passwordHash = await hash(password, 8);
+    const emailExists = await this.useRepository.findByEmail(email);
 
-    if(emailExists){
-      throw new AppError("E-mail is exists");      
+    if (emailExists) {
+      throw new AppError("e-mail já cadastrado");
     }
 
     const resultUser = await this.useRepository.create({
       name,
       email,
       password: passwordHash,
-    })
+    });
 
-    return resultUser
+    const token = sign(
+      {
+        email,
+        name,
+        id: resultUser.id,
+      },
+      `${process.env.JWT_PASS}`,
+      { expiresIn: process.env.JWT_EXPIRE, subject: resultUser.id }
+    );
+
+    const data = {
+      id: resultUser.id,
+      name,
+      email,
+      token,
+    };
+
+    return data;
   }
 }

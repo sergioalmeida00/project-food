@@ -7,43 +7,48 @@ import { sign } from "jsonwebtoken";
 import { Validation } from "../../../../shared/provider/Validation";
 
 @injectable()
-export class AuthUserUseCase{
-    constructor(
-        @inject('KnexUserRepository')
-        private userRepository:IUserRepository
-    ){}
+export class AuthUserUseCase {
+  constructor(
+    @inject("KnexUserRepository")
+    private userRepository: IUserRepository
+  ) {}
 
-    async execute ({email,password}:Pick<UserDTO, 'email'|'password'>){
+  async execute({ email, password }: Pick<UserDTO, "email" | "password">) {
+    const requiredFields = {
+      email: "E-mail is required!",
+      password: "Password is required!",
+    };
 
+    Validation.validateRequiredFields({ email, password }, requiredFields);
 
-        const requiredFields ={
-            email:'E-mail is required!',
-            password:'Password is required!'
-        }
-       
-        Validation.validateRequiredFields({email,password},requiredFields)
-
-        
-        const emailUserExists = await this.userRepository.findByEmail(email)
-        if(!emailUserExists){
-            throw new AppError("Incorrect Login/email",404);            
-        }
-
-        const passwordMatch = compare(password,emailUserExists.password)
-
-        if(!passwordMatch) {
-            throw new AppError("Incorrect Login/email",404);    
-        }
-       
-        const token = sign(
-            {email: emailUserExists.email, name:emailUserExists.name, id: emailUserExists.id},
-            `${process.env.JWT_PASS}`,
-            { expiresIn: process.env.JWT_EXPIRE, subject: emailUserExists.id },
-        )
-
-      
-        delete emailUserExists.password
-
-        return {token, user:emailUserExists }
+    const emailUserExists = await this.userRepository.findByEmail(email);
+    if (!emailUserExists) {
+      throw new AppError("e-mail não cadastrado", 404);
     }
+
+    const passwordMatch = compare(password, emailUserExists.password);
+
+    if (!passwordMatch) {
+      throw new AppError("senha incorreta", 404);
+    }
+
+    const token = sign(
+      {
+        email: emailUserExists.email,
+        name: emailUserExists.name,
+        id: emailUserExists.id,
+      },
+      `${process.env.JWT_PASS}`,
+      { expiresIn: process.env.JWT_EXPIRE, subject: emailUserExists.id }
+    );
+
+    const resultUser = {
+      id: emailUserExists.id,
+      name: emailUserExists.name,
+      email: emailUserExists.email,
+      token,
+    };
+
+    return { resultUser };
+  }
 }
