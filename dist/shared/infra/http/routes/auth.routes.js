@@ -79,19 +79,28 @@ var AuthUserUseCase = class {
     Validation.validateRequiredFields({ email, password }, requiredFields);
     const emailUserExists = await this.userRepository.findByEmail(email);
     if (!emailUserExists) {
-      throw new AppError("Incorrect Login/email", 404);
+      throw new AppError("e-mail n\xE3o cadastrado", 404);
     }
     const passwordMatch = (0, import_bcryptjs.compare)(password, emailUserExists.password);
     if (!passwordMatch) {
-      throw new AppError("Incorrect Login/email", 404);
+      throw new AppError("senha incorreta", 404);
     }
     const token = (0, import_jsonwebtoken.sign)(
-      { email: emailUserExists.email, name: emailUserExists.name, id: emailUserExists.id },
+      {
+        email: emailUserExists.email,
+        name: emailUserExists.name,
+        id: emailUserExists.id
+      },
       `${process.env.JWT_PASS}`,
       { expiresIn: process.env.JWT_EXPIRE, subject: emailUserExists.id }
     );
-    delete emailUserExists.password;
-    return { token, user: emailUserExists };
+    const resultUser = {
+      id: emailUserExists.id,
+      name: emailUserExists.name,
+      email: emailUserExists.email,
+      token
+    };
+    return { resultUser };
   }
 };
 AuthUserUseCase = __decorateClass([
@@ -105,8 +114,8 @@ var AuthUserController = class {
     const { email, password } = request.body;
     const authUserUseCase = import_tsyringe2.container.resolve(AuthUserUseCase);
     try {
-      const token = await authUserUseCase.execute({ email, password });
-      return response.status(201).json({ token });
+      const data = await authUserUseCase.execute({ email, password });
+      return response.status(201).json(data);
     } catch (error) {
       if (error instanceof AppError) {
         return response.status(error.statusCode).json({ error: error.message });

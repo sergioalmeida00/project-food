@@ -64,6 +64,7 @@ var Validation = class {
 };
 
 // src/modules/user/useCase/create-user/create-user-useCase.ts
+var import_jsonwebtoken = require("jsonwebtoken");
 var CreateUserUseCase = class {
   constructor(useRepository) {
     this.useRepository = useRepository;
@@ -74,18 +75,36 @@ var CreateUserUseCase = class {
       email: "Email is required!",
       password: "Password is required!"
     };
-    Validation.validateRequiredFields({ name, email, password }, requiredFields);
+    Validation.validateRequiredFields(
+      { name, email, password },
+      requiredFields
+    );
     const passwordHash = await (0, import_bcryptjs.hash)(password, 8);
     const emailExists = await this.useRepository.findByEmail(email);
     if (emailExists) {
-      throw new AppError("E-mail is exists");
+      throw new AppError("e-mail j\xE1 cadastrado");
     }
     const resultUser = await this.useRepository.create({
       name,
       email,
       password: passwordHash
     });
-    return resultUser;
+    const token = (0, import_jsonwebtoken.sign)(
+      {
+        email,
+        name,
+        id: resultUser.id
+      },
+      `${process.env.JWT_PASS}`,
+      { expiresIn: process.env.JWT_EXPIRE, subject: resultUser.id }
+    );
+    const data = {
+      id: resultUser.id,
+      name,
+      email,
+      token
+    };
+    return data;
   }
 };
 CreateUserUseCase = __decorateClass([

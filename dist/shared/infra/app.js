@@ -215,6 +215,7 @@ var Validation = class {
 };
 
 // src/modules/user/useCase/create-user/create-user-useCase.ts
+var import_jsonwebtoken = require("jsonwebtoken");
 var CreateUserUseCase = class {
   constructor(useRepository) {
     this.useRepository = useRepository;
@@ -225,18 +226,36 @@ var CreateUserUseCase = class {
       email: "Email is required!",
       password: "Password is required!"
     };
-    Validation.validateRequiredFields({ name, email, password }, requiredFields);
+    Validation.validateRequiredFields(
+      { name, email, password },
+      requiredFields
+    );
     const passwordHash = await (0, import_bcryptjs.hash)(password, 8);
     const emailExists = await this.useRepository.findByEmail(email);
     if (emailExists) {
-      throw new AppError("E-mail is exists");
+      throw new AppError("e-mail j\xE1 cadastrado");
     }
     const resultUser = await this.useRepository.create({
       name,
       email,
       password: passwordHash
     });
-    return resultUser;
+    const token = (0, import_jsonwebtoken.sign)(
+      {
+        email,
+        name,
+        id: resultUser.id
+      },
+      `${process.env.JWT_PASS}`,
+      { expiresIn: process.env.JWT_EXPIRE, subject: resultUser.id }
+    );
+    const data = {
+      id: resultUser.id,
+      name,
+      email,
+      token
+    };
+    return data;
   }
 };
 CreateUserUseCase = __decorateClass([
@@ -352,7 +371,7 @@ var ListAllCategoryController = class {
 };
 
 // src/shared/infra/http/middleware/authenticate.ts
-var import_jsonwebtoken = require("jsonwebtoken");
+var import_jsonwebtoken2 = require("jsonwebtoken");
 function authenticate(request, response, next) {
   const { authorization } = request.headers;
   if (!authorization) {
@@ -360,7 +379,7 @@ function authenticate(request, response, next) {
   }
   const [, token] = authorization.split(" ");
   try {
-    const { sub: userId } = (0, import_jsonwebtoken.verify)(
+    const { sub: userId } = (0, import_jsonwebtoken2.verify)(
       token,
       process.env.JWT_PASS ?? ""
     );
@@ -393,7 +412,7 @@ var import_tsyringe9 = require("tsyringe");
 // src/modules/user/useCase/auth-user/auth-user-useCase.ts
 var import_tsyringe8 = require("tsyringe");
 var import_bcryptjs2 = require("bcryptjs");
-var import_jsonwebtoken2 = require("jsonwebtoken");
+var import_jsonwebtoken3 = require("jsonwebtoken");
 var AuthUserUseCase = class {
   constructor(userRepository) {
     this.userRepository = userRepository;
@@ -406,19 +425,28 @@ var AuthUserUseCase = class {
     Validation.validateRequiredFields({ email, password }, requiredFields);
     const emailUserExists = await this.userRepository.findByEmail(email);
     if (!emailUserExists) {
-      throw new AppError("Incorrect Login/email", 404);
+      throw new AppError("e-mail n\xE3o cadastrado", 404);
     }
     const passwordMatch = (0, import_bcryptjs2.compare)(password, emailUserExists.password);
     if (!passwordMatch) {
-      throw new AppError("Incorrect Login/email", 404);
+      throw new AppError("senha incorreta", 404);
     }
-    const token = (0, import_jsonwebtoken2.sign)(
-      { email: emailUserExists.email, name: emailUserExists.name, id: emailUserExists.id },
+    const token = (0, import_jsonwebtoken3.sign)(
+      {
+        email: emailUserExists.email,
+        name: emailUserExists.name,
+        id: emailUserExists.id
+      },
       `${process.env.JWT_PASS}`,
       { expiresIn: process.env.JWT_EXPIRE, subject: emailUserExists.id }
     );
-    delete emailUserExists.password;
-    return { token, user: emailUserExists };
+    const resultUser = {
+      id: emailUserExists.id,
+      name: emailUserExists.name,
+      email: emailUserExists.email,
+      token
+    };
+    return { resultUser };
   }
 };
 AuthUserUseCase = __decorateClass([
@@ -432,8 +460,8 @@ var AuthUserController = class {
     const { email, password } = request.body;
     const authUserUseCase = import_tsyringe9.container.resolve(AuthUserUseCase);
     try {
-      const token = await authUserUseCase.execute({ email, password });
-      return response.status(201).json({ token });
+      const data = await authUserUseCase.execute({ email, password });
+      return response.status(201).json(data);
     } catch (error) {
       if (error instanceof AppError) {
         return response.status(error.statusCode).json({ error: error.message });
