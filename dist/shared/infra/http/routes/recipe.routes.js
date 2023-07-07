@@ -105,12 +105,16 @@ var CreateRecipeController = class {
     const { id: userId } = request.user;
     const { title, description, time, difficulty, category_id, avatar } = request.body;
     try {
+      const validDifficulties = ["FACIL", "MEDIO", "DIFICIL"];
+      if (!validDifficulties.includes(difficulty.toUpperCase())) {
+        throw new AppError("Difficulty is not an enum", 400);
+      }
       const resultRecipe = await createRecipeUseCase.execute({
         title,
         description,
         avatar,
         time,
-        difficulty,
+        difficulty: difficulty.toUpperCase(),
         category_id,
         user_id: userId
       });
@@ -119,6 +123,7 @@ var CreateRecipeController = class {
       if (error instanceof AppError) {
         return response.status(error.statusCode).json({ error: error.message });
       } else {
+        console.log(error);
         return response.status(500).json({ error: "Internal Server Error" });
       }
     }
