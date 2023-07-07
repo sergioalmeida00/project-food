@@ -9,7 +9,7 @@ export const config: Knex.Config = {
     user: env.DATABASE_USER,
     password: env.DATABASE_PASS,
     database: env.DATABASE_DB,
-    ssl: { rejectUnauthorized: false }
+    // ssl: { rejectUnauthorized: false }
   },
   migrations: {
     tableName: 'migrations',
