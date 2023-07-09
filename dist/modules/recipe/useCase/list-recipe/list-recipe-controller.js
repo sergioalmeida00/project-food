@@ -41,8 +41,8 @@ var ListRecipeUseCase = class {
   constructor(recipeRepository) {
     this.recipeRepository = recipeRepository;
   }
-  async execute() {
-    const resultRecipe = await this.recipeRepository.findAll();
+  async execute(search) {
+    const resultRecipe = await this.recipeRepository.findAll(search);
     return resultRecipe;
   }
 };
@@ -63,8 +63,9 @@ var AppError = class {
 var ListRecipeController = class {
   async handle(request, response) {
     const listRecipeUseCase = import_tsyringe2.container.resolve(ListRecipeUseCase);
+    const { search } = request.query;
     try {
-      const resultRecipe = await listRecipeUseCase.execute();
+      const resultRecipe = await listRecipeUseCase.execute(String(search));
       return response.status(200).json({ resultRecipe });
     } catch (error) {
       if (error instanceof AppError) {

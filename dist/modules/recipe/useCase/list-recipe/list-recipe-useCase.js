@@ -38,8 +38,8 @@ var ListRecipeUseCase = class {
   constructor(recipeRepository) {
     this.recipeRepository = recipeRepository;
   }
-  async execute() {
-    const resultRecipe = await this.recipeRepository.findAll();
+  async execute(search) {
+    const resultRecipe = await this.recipeRepository.findAll(search);
     return resultRecipe;
   }
 };

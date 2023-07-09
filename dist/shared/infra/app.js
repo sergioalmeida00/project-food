@@ -146,8 +146,13 @@ var KnexRecipeRepository = class {
   async deleteById({ id, user_id }) {
     await knex("recipe").where({ id }).andWhere({ user_id }).del();
   }
-  async findAll() {
-    const resultRecipe = knex.select("*").from("recipe");
+  async findAll(search) {
+    let resultRecipe;
+    if (search !== "undefined") {
+      resultRecipe = await knex.select("*").from("recipe").whereILike("description", `%${search}%`);
+    } else {
+      resultRecipe = await knex.select("*").from("recipe");
+    }
     return resultRecipe;
   }
   async update({ id, title, description, difficulty, avatar, time, category_id, user_id }) {
@@ -612,8 +617,8 @@ var ListRecipeUseCase = class {
   constructor(recipeRepository) {
     this.recipeRepository = recipeRepository;
   }
-  async execute() {
-    const resultRecipe = await this.recipeRepository.findAll();
+  async execute(search) {
+    const resultRecipe = await this.recipeRepository.findAll(search);
     return resultRecipe;
   }
 };
@@ -626,8 +631,9 @@ ListRecipeUseCase = __decorateClass([
 var ListRecipeController = class {
   async handle(request, response) {
     const listRecipeUseCase = import_tsyringe15.container.resolve(ListRecipeUseCase);
+    const { search } = request.query;
     try {
-      const resultRecipe = await listRecipeUseCase.execute();
+      const resultRecipe = await listRecipeUseCase.execute(String(search));
       return response.status(200).json({ resultRecipe });
     } catch (error) {
       if (error instanceof AppError) {

@@ -9,8 +9,8 @@ export class ListRecipeUseCase{
         private recipeRepository:IRecipeRepository
     ){}
 
-    async execute():Promise<RecipeDTO[]>{
-        const resultRecipe = await this.recipeRepository.findAll()
+    async execute(search:string):Promise<RecipeDTO[]>{
+        const resultRecipe = await this.recipeRepository.findAll(search)
 
         return resultRecipe
     }

@@ -6,9 +6,10 @@ import { AppError } from "../../../../shared/Errors/AppError";
 export class ListRecipeController {
     async handle(request: Request, response:Response):Promise<Response>{
         const listRecipeUseCase = container.resolve(ListRecipeUseCase)
+        const {search} = request.query;        
 
         try {
-            const resultRecipe = await listRecipeUseCase.execute()
+            const resultRecipe = await listRecipeUseCase.execute( String(search) )
 
             return response.status(200).json({resultRecipe})
         } catch (error ) {

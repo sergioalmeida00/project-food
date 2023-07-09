@@ -100,8 +100,13 @@ var KnexRecipeRepository = class {
   async deleteById({ id, user_id }) {
     await knex("recipe").where({ id }).andWhere({ user_id }).del();
   }
-  async findAll() {
-    const resultRecipe = knex.select("*").from("recipe");
+  async findAll(search) {
+    let resultRecipe;
+    if (search !== "undefined") {
+      resultRecipe = await knex.select("*").from("recipe").whereILike("description", `%${search}%`);
+    } else {
+      resultRecipe = await knex.select("*").from("recipe");
+    }
     return resultRecipe;
   }
   async update({ id, title, description, difficulty, avatar, time, category_id, user_id }) {

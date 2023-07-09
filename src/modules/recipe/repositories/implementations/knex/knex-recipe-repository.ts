@@ -36,8 +36,15 @@ export class KnexRecipeRepository implements IRecipeRepository{
             .del()
     }
 
-    async findAll(): Promise<RecipeDTO[]> {
-       const resultRecipe = knex.select('*').from('recipe')
+    async findAll(search?:string): Promise<RecipeDTO[]> {
+        
+        let resultRecipe
+
+        if (search !== 'undefined') {
+            resultRecipe = await knex.select('*').from('recipe').whereILike('description',`%${search}%`)
+        }else{            
+            resultRecipe = await knex.select('*').from('recipe')
+        }
 
        return resultRecipe
     }
