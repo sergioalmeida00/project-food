@@ -38,9 +38,20 @@ var ListRecipeUseCase = class {
   constructor(recipeRepository) {
     this.recipeRepository = recipeRepository;
   }
-  async execute(search) {
-    const resultRecipe = await this.recipeRepository.findAll(search);
-    return resultRecipe;
+  async execute(page, search) {
+    const limitPage = 9;
+    let lastPage = 1;
+    const countRecipe = await this.recipeRepository.countRecipe();
+    if (countRecipe != 0) {
+      lastPage = Math.ceil(Number(countRecipe) / limitPage);
+    }
+    const offset = Number(page * limitPage - limitPage);
+    const resultRecipe = await this.recipeRepository.findAll(offset, limitPage, search);
+    return {
+      recipes: resultRecipe,
+      lastPage,
+      total: Number(countRecipe)
+    };
   }
 };
 ListRecipeUseCase = __decorateClass([

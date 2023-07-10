@@ -100,12 +100,12 @@ var KnexRecipeRepository = class {
   async deleteById({ id, user_id }) {
     await knex("recipe").where({ id }).andWhere({ user_id }).del();
   }
-  async findAll(search) {
+  async findAll(offset, limitPage, search) {
     let resultRecipe;
     if (search !== "undefined") {
-      resultRecipe = await knex.select("*").from("recipe").whereILike("description", `%${search}%`);
+      resultRecipe = await knex.select("*").from("recipe").whereILike("description", `%${search}%`).orderBy("title").limit(limitPage).offset(offset);
     } else {
-      resultRecipe = await knex.select("*").from("recipe");
+      resultRecipe = await knex.select("*").from("recipe").orderBy("title").limit(limitPage).offset(offset);
     }
     return resultRecipe;
   }
@@ -118,6 +118,11 @@ var KnexRecipeRepository = class {
       time,
       category_id
     });
+  }
+  async countRecipe() {
+    const result = await knex("recipe").count().first();
+    const count = result ? Number(result.count) : 0;
+    return count;
   }
 };
 

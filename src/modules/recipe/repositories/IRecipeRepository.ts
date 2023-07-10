@@ -4,7 +4,7 @@ interface IRecipeRepository{
     create({title,description,avatar,time,difficulty,category_id,user_id}:RecipeDTO):Promise<RecipeDTO>
     findById({id,user_id}:Pick<RecipeDTO, 'id' | 'user_id'>):Promise<RecipeDTO>
     deleteById({id,user_id}:Pick<RecipeDTO, 'id' | 'user_id'>):Promise<void>
-    findAll(search?:string):Promise<RecipeDTO[]>
+    findAll(offset: number, limitPage: number, search?: string):Promise<RecipeDTO[]>
     update({
         id,
         title,
@@ -15,6 +15,7 @@ interface IRecipeRepository{
         category_id,
         user_id
     }:RecipeDTO):Promise<void>
+    countRecipe():Promise<Number>
 }
 
 export {IRecipeRepository}

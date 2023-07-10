@@ -9,9 +9,24 @@ export class ListRecipeUseCase{
         private recipeRepository:IRecipeRepository
     ){}
 
-    async execute(search:string):Promise<RecipeDTO[]>{
-        const resultRecipe = await this.recipeRepository.findAll(search)
+    async execute(page:number , search?:string, ):Promise<{ recipes: RecipeDTO[]; lastPage: number, total:number }>{
 
-        return resultRecipe
+        const limitPage = 9;
+        let lastPage = 1;
+        const countRecipe = await this.recipeRepository.countRecipe()
+    
+        if(countRecipe != 0){
+            lastPage = Math.ceil(Number(countRecipe) / limitPage)
+        }
+
+        const offset:number = Number((page * limitPage) - limitPage);
+    
+        const resultRecipe = await this.recipeRepository.findAll(offset,limitPage, search)        
+        
+        return {
+            recipes:resultRecipe,
+            lastPage,
+            total:Number(countRecipe)
+        }
     }
 }

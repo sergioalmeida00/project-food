@@ -4,7 +4,6 @@ import { IRecipeRepository } from "../../IRecipeRepository";
 
 export class KnexRecipeRepository implements IRecipeRepository{
 
-
     async create({ title, description, avatar, time, difficulty, category_id, user_id }: RecipeDTO): Promise<RecipeDTO> {
         
         const resultRecipe = await knex('recipe').insert({
@@ -36,14 +35,14 @@ export class KnexRecipeRepository implements IRecipeRepository{
             .del()
     }
 
-    async findAll(search?:string): Promise<RecipeDTO[]> {
+    async findAll(offset: number, limitPage: number, search?: string): Promise<RecipeDTO[]> {
         
         let resultRecipe
 
         if (search !== 'undefined') {
-            resultRecipe = await knex.select('*').from('recipe').whereILike('description',`%${search}%`)
+            resultRecipe = await knex.select('*').from('recipe').whereILike('description',`%${search}%`).orderBy('title').limit(limitPage).offset(offset)
         }else{            
-            resultRecipe = await knex.select('*').from('recipe')
+            resultRecipe = await knex.select('*').from('recipe').orderBy('title').limit(limitPage).offset(offset)
         }
 
        return resultRecipe
@@ -62,4 +61,10 @@ export class KnexRecipeRepository implements IRecipeRepository{
             category_id
         })
     }
+
+    async countRecipe(): Promise<Number> {
+        const result = await knex('recipe').count().first();
+        const count = result ? Number(result.count) : 0;
+        return count;
+      }
 }

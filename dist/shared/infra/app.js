@@ -146,12 +146,12 @@ var KnexRecipeRepository = class {
   async deleteById({ id, user_id }) {
     await knex("recipe").where({ id }).andWhere({ user_id }).del();
   }
-  async findAll(search) {
+  async findAll(offset, limitPage, search) {
     let resultRecipe;
     if (search !== "undefined") {
-      resultRecipe = await knex.select("*").from("recipe").whereILike("description", `%${search}%`);
+      resultRecipe = await knex.select("*").from("recipe").whereILike("description", `%${search}%`).orderBy("title").limit(limitPage).offset(offset);
     } else {
-      resultRecipe = await knex.select("*").from("recipe");
+      resultRecipe = await knex.select("*").from("recipe").orderBy("title").limit(limitPage).offset(offset);
     }
     return resultRecipe;
   }
@@ -164,6 +164,11 @@ var KnexRecipeRepository = class {
       time,
       category_id
     });
+  }
+  async countRecipe() {
+    const result = await knex("recipe").count().first();
+    const count = result ? Number(result.count) : 0;
+    return count;
   }
 };
 
@@ -617,9 +622,20 @@ var ListRecipeUseCase = class {
   constructor(recipeRepository) {
     this.recipeRepository = recipeRepository;
   }
-  async execute(search) {
-    const resultRecipe = await this.recipeRepository.findAll(search);
-    return resultRecipe;
+  async execute(page, search) {
+    const limitPage = 9;
+    let lastPage = 1;
+    const countRecipe = await this.recipeRepository.countRecipe();
+    if (countRecipe != 0) {
+      lastPage = Math.ceil(Number(countRecipe) / limitPage);
+    }
+    const offset = Number(page * limitPage - limitPage);
+    const resultRecipe = await this.recipeRepository.findAll(offset, limitPage, search);
+    return {
+      recipes: resultRecipe,
+      lastPage,
+      total: Number(countRecipe)
+    };
   }
 };
 ListRecipeUseCase = __decorateClass([
@@ -632,9 +648,13 @@ var ListRecipeController = class {
   async handle(request, response) {
     const listRecipeUseCase = import_tsyringe15.container.resolve(ListRecipeUseCase);
     const { search } = request.query;
+    const { page = 1 } = request.query;
     try {
-      const resultRecipe = await listRecipeUseCase.execute(String(search));
-      return response.status(200).json({ resultRecipe });
+      const resultRecipe = await listRecipeUseCase.execute(
+        Number(page),
+        String(search)
+      );
+      return response.status(200).json(resultRecipe);
     } catch (error) {
       if (error instanceof AppError) {
         return response.status(error.statusCode).json({ error: error.message });
