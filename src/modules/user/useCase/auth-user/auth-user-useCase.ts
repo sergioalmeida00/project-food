@@ -3,8 +3,8 @@ import { IUserRepository } from "../../repositories/IUserRepository";
 import { UserDTO } from "../../DTO/user-dto";
 import { AppError } from "../../../../shared/Errors/AppError";
 import { compare } from "bcryptjs";
-import { sign } from "jsonwebtoken";
 import { Validation } from "../../../../shared/provider/Validation";
+import { GenerateAuth } from "../../../../shared/provider/GenerateAuth";
 
 @injectable()
 export class AuthUserUseCase {
@@ -13,7 +13,7 @@ export class AuthUserUseCase {
     private userRepository: IUserRepository
   ) {}
 
-  async execute({ email, password }: Pick<UserDTO, "email" | "password">) {
+  async execute({ email, password }: Pick<UserDTO, "email" | "password" >) {
     const requiredFields = {
       email: "E-mail is required!",
       password: "Password is required!",
@@ -32,22 +32,11 @@ export class AuthUserUseCase {
       throw new AppError("senha incorreta", 404);
     }
 
-    const token = sign(
-      {
-        email: emailUserExists.email,
-        name: emailUserExists.name,
-        id: emailUserExists.id,
-      },
-      `${process.env.JWT_PASS}`,
-      { expiresIn: process.env.JWT_EXPIRE, subject: emailUserExists.id }
-    );
-
-    const resultUser = {
-      id: emailUserExists.id,
-      name: emailUserExists.name,
-      email: emailUserExists.email,
-      token,
-    };
+    const resultUser = GenerateAuth.token({
+      email:emailUserExists.email,
+      name:emailUserExists.name,
+      id:emailUserExists.id!
+    })
 
     return { resultUser };
   }

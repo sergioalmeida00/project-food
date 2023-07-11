@@ -48,7 +48,6 @@ var AppError = class {
 
 // src/modules/user/useCase/auth-user/auth-user-useCase.ts
 var import_bcryptjs = require("bcryptjs");
-var import_jsonwebtoken = require("jsonwebtoken");
 
 // src/shared/provider/Validation.ts
 var Validation = class {
@@ -60,6 +59,28 @@ var Validation = class {
       );
       throw new AppError(`Missing required fields: ${missingFieldsMessages.join(", ")}`);
     }
+  }
+};
+
+// src/shared/provider/GenerateAuth.ts
+var import_jsonwebtoken = require("jsonwebtoken");
+var GenerateAuth = class {
+  static token({ email, name, id }) {
+    const token = (0, import_jsonwebtoken.sign)(
+      {
+        email,
+        name,
+        id
+      },
+      `${process.env.JWT_PASS}`,
+      { expiresIn: process.env.JWT_EXPIRE, subject: id }
+    );
+    return {
+      id,
+      name,
+      email,
+      token
+    };
   }
 };
 
@@ -82,21 +103,11 @@ var AuthUserUseCase = class {
     if (!passwordMatch) {
       throw new AppError("senha incorreta", 404);
     }
-    const token = (0, import_jsonwebtoken.sign)(
-      {
-        email: emailUserExists.email,
-        name: emailUserExists.name,
-        id: emailUserExists.id
-      },
-      `${process.env.JWT_PASS}`,
-      { expiresIn: process.env.JWT_EXPIRE, subject: emailUserExists.id }
-    );
-    const resultUser = {
-      id: emailUserExists.id,
-      name: emailUserExists.name,
+    const resultUser = GenerateAuth.token({
       email: emailUserExists.email,
-      token
-    };
+      name: emailUserExists.name,
+      id: emailUserExists.id
+    });
     return { resultUser };
   }
 };
@@ -109,9 +120,10 @@ AuthUserUseCase = __decorateClass([
 var AuthUserController = class {
   async handle(request, response, next) {
     const { email, password } = request.body;
+    const { access_token } = request.body;
     const authUserUseCase = import_tsyringe2.container.resolve(AuthUserUseCase);
     try {
-      const data = await authUserUseCase.execute({ email, password });
+      const data = await authUserUseCase.execute({ email, password, access_token });
       return response.status(201).json(data);
     } catch (error) {
       if (error instanceof AppError) {

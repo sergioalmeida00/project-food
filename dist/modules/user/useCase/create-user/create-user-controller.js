@@ -60,8 +60,29 @@ var Validation = class {
   }
 };
 
-// src/modules/user/useCase/create-user/create-user-useCase.ts
+// src/shared/provider/GenerateAuth.ts
 var import_jsonwebtoken = require("jsonwebtoken");
+var GenerateAuth = class {
+  static token({ email, name, id }) {
+    const token = (0, import_jsonwebtoken.sign)(
+      {
+        email,
+        name,
+        id
+      },
+      `${process.env.JWT_PASS}`,
+      { expiresIn: process.env.JWT_EXPIRE, subject: id }
+    );
+    return {
+      id,
+      name,
+      email,
+      token
+    };
+  }
+};
+
+// src/modules/user/useCase/create-user/create-user-useCase.ts
 var CreateUserUseCase = class {
   constructor(useRepository) {
     this.useRepository = useRepository;
@@ -86,21 +107,11 @@ var CreateUserUseCase = class {
       email,
       password: passwordHash
     });
-    const token = (0, import_jsonwebtoken.sign)(
-      {
-        email,
-        name,
-        id: resultUser.id
-      },
-      `${process.env.JWT_PASS}`,
-      { expiresIn: process.env.JWT_EXPIRE, subject: resultUser.id }
-    );
-    const data = {
-      id: resultUser.id,
-      name,
+    const data = GenerateAuth.token({
       email,
-      token
-    };
+      name,
+      id: resultUser.id
+    });
     return data;
   }
 };

@@ -10,10 +10,13 @@ export class AuthUserController {
     next: NextFunction
   ): Promise<Response> {
     const { email, password } = request.body;
+    const {access_token} = request.body;
+
+
     const authUserUseCase = container.resolve(AuthUserUseCase);
 
     try {
-      const data = await authUserUseCase.execute({ email, password });
+      const data = await authUserUseCase.execute({ email, password,access_token });
       return response.status(201).json(data);
     } catch (error) {
       if (error instanceof AppError) {

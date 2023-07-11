@@ -1,7 +1,9 @@
 "use strict";
+var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
 var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __export = (target, all) => {
   for (var name in all)
@@ -15,6 +17,14 @@ var __copyProps = (to, from, except, desc) => {
   }
   return to;
 };
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 var __decorateClass = (decorators, target, key, kind) => {
   var result = kind > 1 ? void 0 : kind ? __getOwnPropDesc(target, key) : target;
@@ -27,33 +37,20 @@ var __decorateClass = (decorators, target, key, kind) => {
 };
 var __decorateParam = (index, decorator) => (target, key) => decorator(target, key, index);
 
-// src/modules/user/useCase/create-user/create-user-useCase.ts
-var create_user_useCase_exports = {};
-__export(create_user_useCase_exports, {
-  CreateUserUseCase: () => CreateUserUseCase
+// src/modules/user/useCase/auth-google/auth-google-useCase.ts
+var auth_google_useCase_exports = {};
+__export(auth_google_useCase_exports, {
+  AuthGoogleUseCase: () => AuthGoogleUseCase
 });
-module.exports = __toCommonJS(create_user_useCase_exports);
+module.exports = __toCommonJS(auth_google_useCase_exports);
 var import_tsyringe = require("tsyringe");
-var import_bcryptjs = require("bcryptjs");
+var import_axios = __toESM(require("axios"));
 
 // src/shared/Errors/AppError.ts
 var AppError = class {
   constructor(message, statusCode = 401) {
     this.message = message;
     this.statusCode = statusCode;
-  }
-};
-
-// src/shared/provider/Validation.ts
-var Validation = class {
-  static validateRequiredFields(obj, requiredFields) {
-    const missingFields = Object.keys(requiredFields).filter((field) => !obj[field]);
-    if (missingFields.length > 0) {
-      const missingFieldsMessages = missingFields.map(
-        (field) => requiredFields[field]
-      );
-      throw new AppError(`Missing required fields: ${missingFieldsMessages.join(", ")}`);
-    }
   }
 };
 
@@ -79,44 +76,35 @@ var GenerateAuth = class {
   }
 };
 
-// src/modules/user/useCase/create-user/create-user-useCase.ts
-var CreateUserUseCase = class {
-  constructor(useRepository) {
-    this.useRepository = useRepository;
+// src/modules/user/useCase/auth-google/auth-google-useCase.ts
+var AuthGoogleUseCase = class {
+  constructor(userRepository) {
+    this.userRepository = userRepository;
   }
-  async execute({ name, email, password }) {
-    const requiredFields = {
-      name: "Name is required!",
-      email: "Email is required!",
-      password: "Password is required!"
-    };
-    Validation.validateRequiredFields(
-      { name, email, password },
-      requiredFields
-    );
-    const passwordHash = await (0, import_bcryptjs.hash)(password, 8);
-    const emailExists = await this.useRepository.findByEmail(email);
-    if (emailExists) {
-      throw new AppError("e-mail j\xE1 cadastrado");
+  async execute(access_token) {
+    const userResponse = await import_axios.default.get("https://www.googleapis.com/oauth2/v2/userinfo", {
+      headers: {
+        Authorization: `Bearer ${access_token}`
+      }
+    });
+    const { email } = userResponse.data;
+    const user = await this.userRepository.findByEmail(email);
+    if (!user) {
+      throw new AppError("e-mail n\xE3o cadastrado", 404);
     }
-    const resultUser = await this.useRepository.create({
-      name,
-      email,
-      password: passwordHash
+    const resultUser = GenerateAuth.token({
+      email: user.email,
+      name: user.name,
+      id: user.id
     });
-    const data = GenerateAuth.token({
-      email,
-      name,
-      id: resultUser.id
-    });
-    return data;
+    return { resultUser };
   }
 };
-CreateUserUseCase = __decorateClass([
+AuthGoogleUseCase = __decorateClass([
   (0, import_tsyringe.injectable)(),
   __decorateParam(0, (0, import_tsyringe.inject)("KnexUserRepository"))
-], CreateUserUseCase);
+], AuthGoogleUseCase);
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
-  CreateUserUseCase
+  AuthGoogleUseCase
 });

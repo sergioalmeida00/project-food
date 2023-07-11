@@ -4,7 +4,7 @@ import { UserDTO } from "../../DTO/user-dto";
 import { hash } from "bcryptjs";
 import { AppError } from "../../../../shared/Errors/AppError";
 import { Validation } from "../../../../shared/provider/Validation";
-import { sign } from "jsonwebtoken";
+import { GenerateAuth } from "../../../../shared/provider/GenerateAuth";
 
 @injectable()
 export class CreateUserUseCase {
@@ -37,23 +37,11 @@ export class CreateUserUseCase {
       email,
       password: passwordHash,
     });
-
-    const token = sign(
-      {
-        email,
-        name,
-        id: resultUser.id,
-      },
-      `${process.env.JWT_PASS}`,
-      { expiresIn: process.env.JWT_EXPIRE, subject: resultUser.id }
-    );
-
-    const data = {
-      id: resultUser.id,
-      name,
+    const data = GenerateAuth.token({
       email,
-      token,
-    };
+      name,
+      id:resultUser.id!
+    })    
 
     return data;
   }

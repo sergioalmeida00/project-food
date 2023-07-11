@@ -214,8 +214,29 @@ var Validation = class {
   }
 };
 
-// src/modules/user/useCase/create-user/create-user-useCase.ts
+// src/shared/provider/GenerateAuth.ts
 var import_jsonwebtoken = require("jsonwebtoken");
+var GenerateAuth = class {
+  static token({ email, name, id }) {
+    const token = (0, import_jsonwebtoken.sign)(
+      {
+        email,
+        name,
+        id
+      },
+      `${process.env.JWT_PASS}`,
+      { expiresIn: process.env.JWT_EXPIRE, subject: id }
+    );
+    return {
+      id,
+      name,
+      email,
+      token
+    };
+  }
+};
+
+// src/modules/user/useCase/create-user/create-user-useCase.ts
 var CreateUserUseCase = class {
   constructor(useRepository) {
     this.useRepository = useRepository;
@@ -240,21 +261,11 @@ var CreateUserUseCase = class {
       email,
       password: passwordHash
     });
-    const token = (0, import_jsonwebtoken.sign)(
-      {
-        email,
-        name,
-        id: resultUser.id
-      },
-      `${process.env.JWT_PASS}`,
-      { expiresIn: process.env.JWT_EXPIRE, subject: resultUser.id }
-    );
-    const data = {
-      id: resultUser.id,
-      name,
+    const data = GenerateAuth.token({
       email,
-      token
-    };
+      name,
+      id: resultUser.id
+    });
     return data;
   }
 };
@@ -412,7 +423,6 @@ var import_tsyringe9 = require("tsyringe");
 // src/modules/user/useCase/auth-user/auth-user-useCase.ts
 var import_tsyringe8 = require("tsyringe");
 var import_bcryptjs2 = require("bcryptjs");
-var import_jsonwebtoken3 = require("jsonwebtoken");
 var AuthUserUseCase = class {
   constructor(userRepository) {
     this.userRepository = userRepository;
@@ -431,21 +441,11 @@ var AuthUserUseCase = class {
     if (!passwordMatch) {
       throw new AppError("senha incorreta", 404);
     }
-    const token = (0, import_jsonwebtoken3.sign)(
-      {
-        email: emailUserExists.email,
-        name: emailUserExists.name,
-        id: emailUserExists.id
-      },
-      `${process.env.JWT_PASS}`,
-      { expiresIn: process.env.JWT_EXPIRE, subject: emailUserExists.id }
-    );
-    const resultUser = {
-      id: emailUserExists.id,
-      name: emailUserExists.name,
+    const resultUser = GenerateAuth.token({
       email: emailUserExists.email,
-      token
-    };
+      name: emailUserExists.name,
+      id: emailUserExists.id
+    });
     return { resultUser };
   }
 };
@@ -458,9 +458,63 @@ AuthUserUseCase = __decorateClass([
 var AuthUserController = class {
   async handle(request, response, next) {
     const { email, password } = request.body;
+    const { access_token } = request.body;
     const authUserUseCase = import_tsyringe9.container.resolve(AuthUserUseCase);
     try {
-      const data = await authUserUseCase.execute({ email, password });
+      const data = await authUserUseCase.execute({ email, password, access_token });
+      return response.status(201).json(data);
+    } catch (error) {
+      if (error instanceof AppError) {
+        return response.status(error.statusCode).json({ error: error.message });
+      } else {
+        console.log(error);
+        return response.status(500).json({ error: "Internal Server Error" });
+      }
+    }
+  }
+};
+
+// src/modules/user/useCase/auth-google/auth-google-controller.ts
+var import_tsyringe11 = require("tsyringe");
+
+// src/modules/user/useCase/auth-google/auth-google-useCase.ts
+var import_tsyringe10 = require("tsyringe");
+var import_axios = __toESM(require("axios"));
+var AuthGoogleUseCase = class {
+  constructor(userRepository) {
+    this.userRepository = userRepository;
+  }
+  async execute(access_token) {
+    const userResponse = await import_axios.default.get("https://www.googleapis.com/oauth2/v2/userinfo", {
+      headers: {
+        Authorization: `Bearer ${access_token}`
+      }
+    });
+    const { email } = userResponse.data;
+    const user = await this.userRepository.findByEmail(email);
+    if (!user) {
+      throw new AppError("e-mail n\xE3o cadastrado", 404);
+    }
+    const resultUser = GenerateAuth.token({
+      email: user.email,
+      name: user.name,
+      id: user.id
+    });
+    return { resultUser };
+  }
+};
+AuthGoogleUseCase = __decorateClass([
+  (0, import_tsyringe10.injectable)(),
+  __decorateParam(0, (0, import_tsyringe10.inject)("KnexUserRepository"))
+], AuthGoogleUseCase);
+
+// src/modules/user/useCase/auth-google/auth-google-controller.ts
+var AuthGoogleController = class {
+  async handle(request, response) {
+    const { access_token } = request.body;
+    const authGoogleUseCase = import_tsyringe11.container.resolve(AuthGoogleUseCase);
+    try {
+      const data = await authGoogleUseCase.execute(access_token);
       return response.status(201).json(data);
     } catch (error) {
       if (error instanceof AppError) {
@@ -476,16 +530,18 @@ var AuthUserController = class {
 // src/shared/infra/http/routes/auth.routes.ts
 var routerAuth = (0, import_express3.Router)();
 var authUserController = new AuthUserController();
+var authGoogleController = new AuthGoogleController();
 routerAuth.post("/", authUserController.handle);
+routerAuth.post("/me", authGoogleController.handle);
 
 // src/shared/infra/http/routes/recipe.routes.ts
 var import_express4 = require("express");
 
 // src/modules/recipe/useCase/create-recipe/create-recipe-controller.ts
-var import_tsyringe11 = require("tsyringe");
+var import_tsyringe13 = require("tsyringe");
 
 // src/modules/recipe/useCase/create-recipe/create-recipe-useCase.ts
-var import_tsyringe10 = require("tsyringe");
+var import_tsyringe12 = require("tsyringe");
 var CreateRecipeUseCase = class {
   constructor(recipeRepository) {
     this.recipeRepository = recipeRepository;
@@ -517,14 +573,14 @@ var CreateRecipeUseCase = class {
   }
 };
 CreateRecipeUseCase = __decorateClass([
-  (0, import_tsyringe10.injectable)(),
-  __decorateParam(0, (0, import_tsyringe10.inject)("KnexRecipeRepository"))
+  (0, import_tsyringe12.injectable)(),
+  __decorateParam(0, (0, import_tsyringe12.inject)("KnexRecipeRepository"))
 ], CreateRecipeUseCase);
 
 // src/modules/recipe/useCase/create-recipe/create-recipe-controller.ts
 var CreateRecipeController = class {
   async handle(request, response) {
-    const createRecipeUseCase = import_tsyringe11.container.resolve(CreateRecipeUseCase);
+    const createRecipeUseCase = import_tsyringe13.container.resolve(CreateRecipeUseCase);
     const { id: userId } = request.user;
     const { title, description, time, difficulty, category_id, avatar } = request.body;
     try {
@@ -554,10 +610,10 @@ var CreateRecipeController = class {
 };
 
 // src/modules/recipe/useCase/delete-recipe/delete-recipe-controller.ts
-var import_tsyringe13 = require("tsyringe");
+var import_tsyringe15 = require("tsyringe");
 
 // src/modules/recipe/useCase/delete-recipe/delete-recipe-useCase.ts
-var import_tsyringe12 = require("tsyringe");
+var import_tsyringe14 = require("tsyringe");
 var DeleteRecipeUseCase = class {
   constructor(recipeRepository) {
     this.recipeRepository = recipeRepository;
@@ -577,14 +633,14 @@ var DeleteRecipeUseCase = class {
   }
 };
 DeleteRecipeUseCase = __decorateClass([
-  (0, import_tsyringe12.injectable)(),
-  __decorateParam(0, (0, import_tsyringe12.inject)("KnexRecipeRepository"))
+  (0, import_tsyringe14.injectable)(),
+  __decorateParam(0, (0, import_tsyringe14.inject)("KnexRecipeRepository"))
 ], DeleteRecipeUseCase);
 
 // src/modules/recipe/useCase/delete-recipe/delete-recipe-controller.ts
 var DeleteRecipeController = class {
   async handle(request, response) {
-    const deleteRecipeUseCase = import_tsyringe13.container.resolve(DeleteRecipeUseCase);
+    const deleteRecipeUseCase = import_tsyringe15.container.resolve(DeleteRecipeUseCase);
     const { id: userId } = request.user;
     const { id } = request.params;
     try {
@@ -604,10 +660,10 @@ var DeleteRecipeController = class {
 };
 
 // src/modules/recipe/useCase/list-recipe/list-recipe-controller.ts
-var import_tsyringe15 = require("tsyringe");
+var import_tsyringe17 = require("tsyringe");
 
 // src/modules/recipe/useCase/list-recipe/list-recipe-useCase.ts
-var import_tsyringe14 = require("tsyringe");
+var import_tsyringe16 = require("tsyringe");
 var ListRecipeUseCase = class {
   constructor(recipeRepository) {
     this.recipeRepository = recipeRepository;
@@ -629,14 +685,14 @@ var ListRecipeUseCase = class {
   }
 };
 ListRecipeUseCase = __decorateClass([
-  (0, import_tsyringe14.injectable)(),
-  __decorateParam(0, (0, import_tsyringe14.inject)("KnexRecipeRepository"))
+  (0, import_tsyringe16.injectable)(),
+  __decorateParam(0, (0, import_tsyringe16.inject)("KnexRecipeRepository"))
 ], ListRecipeUseCase);
 
 // src/modules/recipe/useCase/list-recipe/list-recipe-controller.ts
 var ListRecipeController = class {
   async handle(request, response) {
-    const listRecipeUseCase = import_tsyringe15.container.resolve(ListRecipeUseCase);
+    const listRecipeUseCase = import_tsyringe17.container.resolve(ListRecipeUseCase);
     const { search } = request.query;
     const { page = 1 } = request.query;
     try {
@@ -656,10 +712,10 @@ var ListRecipeController = class {
 };
 
 // src/modules/recipe/useCase/update-recipe/update-recipe-controller.ts
-var import_tsyringe17 = require("tsyringe");
+var import_tsyringe19 = require("tsyringe");
 
 // src/modules/recipe/useCase/update-recipe/update-recipe-useCase.ts
-var import_tsyringe16 = require("tsyringe");
+var import_tsyringe18 = require("tsyringe");
 var UpdateRecipeUseCase = class {
   constructor(recipeRepository) {
     this.recipeRepository = recipeRepository;
@@ -692,14 +748,14 @@ var UpdateRecipeUseCase = class {
   }
 };
 UpdateRecipeUseCase = __decorateClass([
-  (0, import_tsyringe16.injectable)(),
-  __decorateParam(0, (0, import_tsyringe16.inject)("KnexRecipeRepository"))
+  (0, import_tsyringe18.injectable)(),
+  __decorateParam(0, (0, import_tsyringe18.inject)("KnexRecipeRepository"))
 ], UpdateRecipeUseCase);
 
 // src/modules/recipe/useCase/update-recipe/update-recipe-controller.ts
 var UpdateRecipeController = class {
   async handle(request, response) {
-    const updateRecipeUseCase = import_tsyringe17.container.resolve(UpdateRecipeUseCase);
+    const updateRecipeUseCase = import_tsyringe19.container.resolve(UpdateRecipeUseCase);
     const { id } = request.params;
     const { id: userId } = request.user;
     const {
@@ -733,10 +789,10 @@ var UpdateRecipeController = class {
 };
 
 // src/modules/recipe/useCase/listById-recipe/listById-controller.ts
-var import_tsyringe19 = require("tsyringe");
+var import_tsyringe21 = require("tsyringe");
 
 // src/modules/recipe/useCase/listById-recipe/listById-recipe-useCase.ts
-var import_tsyringe18 = require("tsyringe");
+var import_tsyringe20 = require("tsyringe");
 var ListByIdRecipeUseCase = class {
   constructor(recipeRepository) {
     this.recipeRepository = recipeRepository;
@@ -752,14 +808,14 @@ var ListByIdRecipeUseCase = class {
   }
 };
 ListByIdRecipeUseCase = __decorateClass([
-  (0, import_tsyringe18.injectable)(),
-  __decorateParam(0, (0, import_tsyringe18.inject)("KnexRecipeRepository"))
+  (0, import_tsyringe20.injectable)(),
+  __decorateParam(0, (0, import_tsyringe20.inject)("KnexRecipeRepository"))
 ], ListByIdRecipeUseCase);
 
 // src/modules/recipe/useCase/listById-recipe/listById-controller.ts
 var ListByIdController = class {
   async handle(request, response) {
-    const listByIdUseCase = import_tsyringe19.container.resolve(ListByIdRecipeUseCase);
+    const listByIdUseCase = import_tsyringe21.container.resolve(ListByIdRecipeUseCase);
     const { id: userId } = request.user;
     const { id } = request.params;
     try {
