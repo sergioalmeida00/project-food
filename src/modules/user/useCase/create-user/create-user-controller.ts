@@ -5,7 +5,7 @@ import { AppError } from '../../../../shared/Errors/AppError'
 
 export class CreateUserController {
   async handle(request: Request, response: Response): Promise<Response> {
-    const { name, email, password } = request.body
+    const { name, email, password, avatar } = request.body
     const createUserUseCase = container.resolve(CreateUserUseCase)
 
     try {
@@ -13,6 +13,7 @@ export class CreateUserController {
         name,
         email,
         password,
+        avatar
       })
 
       return response.status(201).json({ resultUser })

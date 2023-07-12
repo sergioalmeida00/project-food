@@ -85,11 +85,12 @@ var knex = (0, import_knex.knex)(config2);
 
 // src/modules/user/repositories/implementations/knex/knex-user-repository.ts
 var KnexUserRepository = class {
-  async create({ name, email, password }) {
+  async create({ name, email, password, avatar }) {
     const resultUser = await knex("users").insert({
       name,
       email,
-      password
+      password,
+      avatar
     }).returning("*");
     return resultUser[0];
   }
@@ -217,12 +218,13 @@ var Validation = class {
 // src/shared/provider/GenerateAuth.ts
 var import_jsonwebtoken = require("jsonwebtoken");
 var GenerateAuth = class {
-  static token({ email, name, id }) {
+  static token({ email, name, id, avatar }) {
     const token = (0, import_jsonwebtoken.sign)(
       {
         email,
         name,
-        id
+        id,
+        avatar
       },
       `${process.env.JWT_PASS}`,
       { expiresIn: process.env.JWT_EXPIRE, subject: id }
@@ -241,7 +243,7 @@ var CreateUserUseCase = class {
   constructor(useRepository) {
     this.useRepository = useRepository;
   }
-  async execute({ name, email, password }) {
+  async execute({ name, email, password, avatar }) {
     const requiredFields = {
       name: "Name is required!",
       email: "Email is required!",
@@ -259,12 +261,14 @@ var CreateUserUseCase = class {
     const resultUser = await this.useRepository.create({
       name,
       email,
-      password: passwordHash
+      password: passwordHash,
+      avatar
     });
     const data = GenerateAuth.token({
       email,
       name,
-      id: resultUser.id
+      id: resultUser.id,
+      avatar
     });
     return data;
   }
@@ -277,13 +281,14 @@ CreateUserUseCase = __decorateClass([
 // src/modules/user/useCase/create-user/create-user-controller.ts
 var CreateUserController = class {
   async handle(request, response) {
-    const { name, email, password } = request.body;
+    const { name, email, password, avatar } = request.body;
     const createUserUseCase = import_tsyringe3.container.resolve(CreateUserUseCase);
     try {
       const resultUser = await createUserUseCase.execute({
         name,
         email,
-        password
+        password,
+        avatar
       });
       return response.status(201).json({ resultUser });
     } catch (error) {

@@ -30,8 +30,6 @@ export class AuthGoogleUseCase{
             name:user.name,
             id:user.id!
         })
-
-          return { resultUser }
-        
+          return { resultUser }        
       }
 }

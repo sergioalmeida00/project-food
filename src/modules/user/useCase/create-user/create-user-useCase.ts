@@ -13,7 +13,7 @@ export class CreateUserUseCase {
     private useRepository: IUserRepository
   ) {}
 
-  async execute({ name, email, password }: UserDTO): Promise<any> {
+  async execute({ name, email, password, avatar}: UserDTO): Promise<any> {
     const requiredFields = {
       name: "Name is required!",
       email: "Email is required!",
@@ -36,11 +36,14 @@ export class CreateUserUseCase {
       name,
       email,
       password: passwordHash,
+      avatar
     });
+
     const data = GenerateAuth.token({
       email,
       name,
-      id:resultUser.id!
+      id:resultUser.id!,
+      avatar
     })    
 
     return data;

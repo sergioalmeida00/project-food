@@ -25,12 +25,13 @@ __export(GenerateAuth_exports, {
 module.exports = __toCommonJS(GenerateAuth_exports);
 var import_jsonwebtoken = require("jsonwebtoken");
 var GenerateAuth = class {
-  static token({ email, name, id }) {
+  static token({ email, name, id, avatar }) {
     const token = (0, import_jsonwebtoken.sign)(
       {
         email,
         name,
-        id
+        id,
+        avatar
       },
       `${process.env.JWT_PASS}`,
       { expiresIn: process.env.JWT_EXPIRE, subject: id }

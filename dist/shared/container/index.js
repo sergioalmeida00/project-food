@@ -49,11 +49,12 @@ var knex = (0, import_knex.knex)(config2);
 
 // src/modules/user/repositories/implementations/knex/knex-user-repository.ts
 var KnexUserRepository = class {
-  async create({ name, email, password }) {
+  async create({ name, email, password, avatar }) {
     const resultUser = await knex("users").insert({
       name,
       email,
-      password
+      password,
+      avatar
     }).returning("*");
     return resultUser[0];
   }

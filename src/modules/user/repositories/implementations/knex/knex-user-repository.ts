@@ -4,12 +4,13 @@ import { IUserRepository } from '../../IUserRepository'
 
 export class KnexUserRepository implements IUserRepository {
 
-  async create({ name, email, password }: UserDTO): Promise<UserDTO> {
+  async create({ name, email, password,avatar }: UserDTO): Promise<UserDTO> {
     const resultUser = await knex('users')
       .insert({
         name,
         email,
         password,
+        avatar
       })
       .returning('*')
 

@@ -60,12 +60,13 @@ var Validation = class {
 // src/shared/provider/GenerateAuth.ts
 var import_jsonwebtoken = require("jsonwebtoken");
 var GenerateAuth = class {
-  static token({ email, name, id }) {
+  static token({ email, name, id, avatar }) {
     const token = (0, import_jsonwebtoken.sign)(
       {
         email,
         name,
-        id
+        id,
+        avatar
       },
       `${process.env.JWT_PASS}`,
       { expiresIn: process.env.JWT_EXPIRE, subject: id }
@@ -84,7 +85,7 @@ var CreateUserUseCase = class {
   constructor(useRepository) {
     this.useRepository = useRepository;
   }
-  async execute({ name, email, password }) {
+  async execute({ name, email, password, avatar }) {
     const requiredFields = {
       name: "Name is required!",
       email: "Email is required!",
@@ -102,12 +103,14 @@ var CreateUserUseCase = class {
     const resultUser = await this.useRepository.create({
       name,
       email,
-      password: passwordHash
+      password: passwordHash,
+      avatar
     });
     const data = GenerateAuth.token({
       email,
       name,
-      id: resultUser.id
+      id: resultUser.id,
+      avatar
     });
     return data;
   }
