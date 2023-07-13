@@ -46,14 +46,6 @@ module.exports = __toCommonJS(auth_google_useCase_exports);
 var import_tsyringe = require("tsyringe");
 var import_axios = __toESM(require("axios"));
 
-// src/shared/Errors/AppError.ts
-var AppError = class {
-  constructor(message, statusCode = 401) {
-    this.message = message;
-    this.statusCode = statusCode;
-  }
-};
-
 // src/shared/provider/GenerateAuth.ts
 var import_jsonwebtoken = require("jsonwebtoken");
 var GenerateAuth = class {
@@ -88,10 +80,14 @@ var AuthGoogleUseCase = class {
         Authorization: `Bearer ${access_token}`
       }
     });
-    const { email } = userResponse.data;
-    const user = await this.userRepository.findByEmail(email);
+    const userInfo = userResponse.data;
+    let user = await this.userRepository.findByEmail(userInfo.email);
     if (!user) {
-      throw new AppError("e-mail n\xE3o cadastrado", 404);
+      user = await this.userRepository.create({
+        name: userInfo.name,
+        email: userInfo.email,
+        avatar: userInfo.picture
+      });
     }
     const resultUser = GenerateAuth.token({
       email: user.email,

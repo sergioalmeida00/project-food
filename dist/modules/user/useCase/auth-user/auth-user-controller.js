@@ -100,7 +100,10 @@ var AuthUserUseCase = class {
     if (!emailUserExists) {
       throw new AppError("e-mail n\xE3o cadastrado", 404);
     }
-    const passwordMatch = (0, import_bcryptjs.compare)(password, emailUserExists.password);
+    if (!emailUserExists.password) {
+      throw new AppError("e-mail j\xE1 associado a uma conta do Google", 404);
+    }
+    const passwordMatch = await (0, import_bcryptjs.compare)(password, emailUserExists.password);
     if (!passwordMatch) {
       throw new AppError("senha incorreta", 404);
     }
@@ -124,7 +127,7 @@ var AuthUserController = class {
     const { access_token } = request.body;
     const authUserUseCase = import_tsyringe2.container.resolve(AuthUserUseCase);
     try {
-      const data = await authUserUseCase.execute({ email, password, access_token });
+      const data = await authUserUseCase.execute({ email, password });
       return response.status(201).json(data);
     } catch (error) {
       if (error instanceof AppError) {

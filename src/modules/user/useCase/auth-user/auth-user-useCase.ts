@@ -22,12 +22,18 @@ export class AuthUserUseCase {
     Validation.validateRequiredFields({ email, password }, requiredFields);
 
     const emailUserExists = await this.userRepository.findByEmail(email);
+
     if (!emailUserExists) {
       throw new AppError("e-mail não cadastrado", 404);
     }
 
-    const passwordMatch = compare(password, emailUserExists.password);
+    if(!emailUserExists.password){
+      throw new AppError("e-mail já associado a uma conta do Google", 404);
+    }
+    
 
+    const passwordMatch = await compare(password!, emailUserExists.password!);
+    
     if (!passwordMatch) {
       throw new AppError("senha incorreta", 404);
     }

@@ -370,7 +370,10 @@ var AuthUserUseCase = class {
     if (!emailUserExists) {
       throw new AppError("e-mail n\xE3o cadastrado", 404);
     }
-    const passwordMatch = (0, import_bcryptjs2.compare)(password, emailUserExists.password);
+    if (!emailUserExists.password) {
+      throw new AppError("e-mail j\xE1 associado a uma conta do Google", 404);
+    }
+    const passwordMatch = await (0, import_bcryptjs2.compare)(password, emailUserExists.password);
     if (!passwordMatch) {
       throw new AppError("senha incorreta", 404);
     }
@@ -394,7 +397,7 @@ var AuthUserController = class {
     const { access_token } = request.body;
     const authUserUseCase = import_tsyringe8.container.resolve(AuthUserUseCase);
     try {
-      const data = await authUserUseCase.execute({ email, password, access_token });
+      const data = await authUserUseCase.execute({ email, password });
       return response.status(201).json(data);
     } catch (error) {
       if (error instanceof AppError) {
@@ -423,10 +426,14 @@ var AuthGoogleUseCase = class {
         Authorization: `Bearer ${access_token}`
       }
     });
-    const { email } = userResponse.data;
-    const user = await this.userRepository.findByEmail(email);
+    const userInfo = userResponse.data;
+    let user = await this.userRepository.findByEmail(userInfo.email);
     if (!user) {
-      throw new AppError("e-mail n\xE3o cadastrado", 404);
+      user = await this.userRepository.create({
+        name: userInfo.name,
+        email: userInfo.email,
+        avatar: userInfo.picture
+      });
     }
     const resultUser = GenerateAuth.token({
       email: user.email,

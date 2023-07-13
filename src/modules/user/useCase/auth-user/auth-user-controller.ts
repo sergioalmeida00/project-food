@@ -16,7 +16,7 @@ export class AuthUserController {
     const authUserUseCase = container.resolve(AuthUserUseCase);
 
     try {
-      const data = await authUserUseCase.execute({ email, password,access_token });
+      const data = await authUserUseCase.execute({ email, password });
       return response.status(201).json(data);
     } catch (error) {
       if (error instanceof AppError) {

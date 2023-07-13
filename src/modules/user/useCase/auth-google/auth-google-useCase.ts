@@ -3,6 +3,7 @@ import { IUserRepository } from "../../repositories/IUserRepository";
 import axios from "axios";
 import { AppError } from "../../../../shared/Errors/AppError";
 import { GenerateAuth } from "../../../../shared/provider/GenerateAuth";
+import { UserAuthGoogle } from "../../DTO/user-dto";
 
 @injectable()
 export class AuthGoogleUseCase{
@@ -17,12 +18,16 @@ export class AuthGoogleUseCase{
                  Authorization: `Bearer ${access_token}`
                 }
             });
-        const { email } =  userResponse.data
+        const userInfo:UserAuthGoogle =  userResponse.data
 
-        const user = await this.userRepository.findByEmail(email)
-
+        let user = await this.userRepository.findByEmail(userInfo.email)
+        
         if(!user){
-            throw new AppError("e-mail não cadastrado", 404);
+            user = await this.userRepository.create({
+                name:userInfo.name,
+                email:userInfo.email,
+                avatar:userInfo.picture,
+            })
         }
 
         const resultUser = GenerateAuth.token({
