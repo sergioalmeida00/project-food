@@ -25,11 +25,15 @@ export class CreateUserUseCase {
       requiredFields
     );
 
-    const passwordHash = await hash(password, 8);
+    const passwordHash = await hash(password!, 8);
     const emailExists = await this.useRepository.findByEmail(email);
 
-    if (emailExists) {
+        
+    if (emailExists && emailExists.password) {
       throw new AppError("e-mail já cadastrado");
+    }
+    if(emailExists && !emailExists.password ){
+      throw new AppError("e-mail já associado a uma conta do Google", 404);
     }
 
     const resultUser = await this.useRepository.create({

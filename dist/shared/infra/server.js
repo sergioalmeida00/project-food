@@ -255,8 +255,11 @@ var CreateUserUseCase = class {
     );
     const passwordHash = await (0, import_bcryptjs.hash)(password, 8);
     const emailExists = await this.useRepository.findByEmail(email);
-    if (emailExists) {
+    if (emailExists && emailExists.password) {
       throw new AppError("e-mail j\xE1 cadastrado");
+    }
+    if (emailExists && !emailExists.password) {
+      throw new AppError("e-mail j\xE1 associado a uma conta do Google", 404);
     }
     const resultUser = await this.useRepository.create({
       name,
