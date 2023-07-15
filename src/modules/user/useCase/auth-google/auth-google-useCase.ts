@@ -33,8 +33,11 @@ export class AuthGoogleUseCase{
         const resultUser = GenerateAuth.token({
             email:user.email,
             name:user.name,
-            id:user.id!
+            id:user.id!,
         })
-          return { resultUser }        
+          return { 
+            ...resultUser,
+            avatar:user.avatar
+        }        
       }
 }

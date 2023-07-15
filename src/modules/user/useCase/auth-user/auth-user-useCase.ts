@@ -44,6 +44,9 @@ export class AuthUserUseCase {
       id:emailUserExists.id!
     })
 
-    return { resultUser };
+    return { 
+      ...resultUser,
+      avatar:emailUserExists.avatar
+    };
   }
 }

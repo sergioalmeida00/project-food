@@ -32,6 +32,7 @@ export class CreateUserUseCase {
     if (emailExists && emailExists.password) {
       throw new AppError("e-mail já cadastrado");
     }
+    
     if(emailExists && !emailExists.password ){
       throw new AppError("e-mail já associado a uma conta do Google", 404);
     }
@@ -47,9 +48,11 @@ export class CreateUserUseCase {
       email,
       name,
       id:resultUser.id!,
-      avatar
     })    
 
-    return data;
+    return {
+      ...data,
+      avatar:resultUser.avatar
+    };
   }
 }

@@ -218,13 +218,12 @@ var Validation = class {
 // src/shared/provider/GenerateAuth.ts
 var import_jsonwebtoken = require("jsonwebtoken");
 var GenerateAuth = class {
-  static token({ email, name, id, avatar }) {
+  static token({ email, name, id }) {
     const token = (0, import_jsonwebtoken.sign)(
       {
         email,
         name,
-        id,
-        avatar
+        id
       },
       `${process.env.JWT_PASS}`,
       { expiresIn: process.env.JWT_EXPIRE, subject: id }
@@ -270,10 +269,12 @@ var CreateUserUseCase = class {
     const data = GenerateAuth.token({
       email,
       name,
-      id: resultUser.id,
-      avatar
+      id: resultUser.id
     });
-    return data;
+    return {
+      ...data,
+      avatar: resultUser.avatar
+    };
   }
 };
 CreateUserUseCase = __decorateClass([
@@ -457,7 +458,10 @@ var AuthUserUseCase = class {
       name: emailUserExists.name,
       id: emailUserExists.id
     });
-    return { resultUser };
+    return {
+      ...resultUser,
+      avatar: emailUserExists.avatar
+    };
   }
 };
 AuthUserUseCase = __decorateClass([
@@ -515,7 +519,10 @@ var AuthGoogleUseCase = class {
       name: user.name,
       id: user.id
     });
-    return { resultUser };
+    return {
+      ...resultUser,
+      avatar: user.avatar
+    };
   }
 };
 AuthGoogleUseCase = __decorateClass([
